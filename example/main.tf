@@ -8,7 +8,6 @@ module "managed_redis" {
   common_tags = {
     "managedBy"    = "Terraform"
     "environment"  = var.env
-    "product"      = "myapp"
     "application"  = "core"
     "businessArea" = "sds"
     "expiresAfter" = "3000-01-01"
