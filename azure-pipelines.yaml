@@ -60,15 +60,15 @@ stages:
               overrideAction: "plan"
               forcePreventParallelJobRun: true
 
-  - stage: TerraformDeployment
-    dependsOn: Precheck
-    jobs:
-      - job: DeployExample
-        timeoutInMinutes: ${{ variables.timeoutInMinutes }}
-        pool:
-          vmImage: ${{ variables.agentImage }}
-        steps:
-          - ${{ if parameters.deploy_example }}:
+  - ${{ if parameters.deploy_example }}:
+    - stage: TerraformDeployment
+      dependsOn: Precheck
+      jobs:
+        - job: DeployExample
+          timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+          pool:
+            vmImage: ${{ variables.agentImage }}
+          steps:
             - template: steps/terraform.yaml@cnp-azuredevops-libraries
               parameters:
                 overrideAction: ${{ parameters.overrideAction }}
@@ -77,7 +77,7 @@ stages:
                 component: 'example'
                 terraformInitSubscription: 'DTS-SHAREDSERVICESPTL-SBOX'
                 product: ${{ variables.product }}
-                baseDirectory: ${{ variables.baseDirectory }}
+                baseDirectory: ''
       # - job: TerraformTest
       #   pool:
       #     vmImage: ${{ variables.agentImage }}
