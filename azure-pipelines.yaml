@@ -72,6 +72,7 @@ stages:
             - template: steps/terraform.yaml@cnp-azuredevops-libraries
               parameters:
                 overrideAction: ${{ parameters.overrideAction }}
+                serviceConnection: ${{ variables.serviceConnection }}
                 environment: 'sbox'
                 component: 'example'
                 terraformInitSubscription: 'DTS-SHAREDSERVICESPTL-SBOX'
