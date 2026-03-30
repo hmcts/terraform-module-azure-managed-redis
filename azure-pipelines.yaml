@@ -83,22 +83,25 @@ stages:
                 backendResourceGroupName: 'azure-control-ptlsbox-rg'
                 tfVarsFile: "example.tfvars"
 
-      # - job: TerraformTest
-      #   pool:
-      #     vmImage: ${{ variables.agentImage }}
-      #   timeoutInMinutes: ${{ variables.timeoutInMinutes }}
-      #   workspace:
-      #     clean: all
-      #   steps:
-      #     - task: TerraformInstaller@2
-      #       displayName: 'Install Terraform'
-      #       inputs:
-      #         terraformVersion: 'latest'
-      #     - task: AzureCLI@2
-      #       inputs:
-      #         azureSubscription: "DTS-SHAREDSERVICESPTL-SBOX"
-      #         scriptType: "bash"
-      #         scriptLocation: "inlineScript"
-      #         inlineScript: |
-      #           terraform init
-      #           terraform test
+  - stage: Test
+    dependsOn: Precheck
+    jobs:
+      - job: TerraformTest
+        pool:
+          vmImage: ${{ variables.agentImage }}
+        timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+        workspace:
+          clean: all
+        steps:
+          - task: TerraformInstaller@2
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: 'latest'
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: "DTS-SHAREDSERVICESPTL-SBOX"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                terraform init
+                terraform test

@@ -1,18 +1,29 @@
-# terraform-module-template
+# terraform-module-azure-managed-redis
 
-<!-- TODO fill in resource name in link to product documentation -->
-Terraform module for [Resource name](https://example.com).
+Terraform module for [Azure Managed Redis](https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/managed-redis/managed-redis-overview).
 
 ## Example
 
-<!-- todo update module name -->
 ```hcl
-module "todo_resource_name" {
-  source = "git@github.com:hmcts/terraform-module-todo?ref=main"
+module "managed_redis" {
+  source = "git@github.com:hmcts/terraform-module-azure-managed-redis?ref=main"
   ...
 }
-
 ```
+
+## Deploying the Example
+
+You can deploy the example resource using this module to the CNP `DTS-SHAREDSERVICESPTL-SBOX` subscription via the Azure DevOps pipeline.
+
+To run the pipeline:
+
+1. Navigate to the pipeline in Azure DevOps.
+2. Click **Run pipeline**.
+3. Tick the **`deploy_example`** checkbox.
+4. Select the desired **`overrideAction`** (`plan`, `apply`, or `destroy`).
+5. Click **Run**.
+
+The pipeline will deploy the resources defined in the [example/](example/) directory to the sandbox subscription.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
