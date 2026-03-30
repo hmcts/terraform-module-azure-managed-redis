@@ -1,0 +1,98 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+pr:
+  - main
+
+resources:
+  repositories:
+    - repository: cnp-azuredevops-libraries
+      type: github
+      ref: refs/heads/master
+      name: hmcts/cnp-azuredevops-libraries
+      endpoint: "hmcts"
+
+variables:
+  - name: timeoutInMinutes
+    value: 60
+  - name: agentImage
+    value: ubuntu-24.04
+  - name: serviceConnection
+    value: "DTS-SHAREDSERVICESPTL-SBOX"
+  - name: baseDirectory
+    value: example
+  - template: vars/input-variables.yaml@cnp-azuredevops-libraries
+
+
+parameters:
+  - name: overrideAction
+    type: string
+    default: plan
+    values:
+      - plan
+      - apply
+      - destroy
+  - name: deploy_example
+    type: boolean
+    default: false
+  - name: environment_components
+    type: object
+    default:
+      - deployment: 'example'
+        terraformInitSubscription: 'DTS-SHAREDSERVICESPTL-SBOX'
+
+
+stages:
+  - stage: Precheck
+    jobs:
+      - job: PrecheckJob
+        pool:
+          vmImage: ${{ variables.agentImage }}
+        steps:
+          - template: steps/terraform-precheck.yaml@cnp-azuredevops-libraries
+            parameters:
+              keyvaultName: "infra-vault-nonprod"
+              keyvaultSecret: "azure-devops-sp-token"
+              serviceConnection: "azurerm-sandbox"
+              overrideAction: "plan"
+              forcePreventParallelJobRun: true
+
+  - stage: TerraformDeployment
+    dependsOn: Precheck
+    jobs:
+      - job: DeployExample
+        timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+        pool:
+          vmImage: ${{ variables.agentImage }}
+        steps:
+          - ${{ if parameters.deploy_example }}:
+            - template: steps/terraform.yaml@cnp-azuredevops-libraries
+              parameters:
+                overrideAction: ${{ parameters.overrideAction }}
+                environment: 'sbox'
+                component: 'example'
+                terraformInitSubscription: 'DTS-SHAREDSERVICESPTL-SBOX'
+                product: ${{ variables.product }}
+                baseDirectory: ${{ variables.baseDirectory }}
+      # - job: TerraformTest
+      #   pool:
+      #     vmImage: ${{ variables.agentImage }}
+      #   timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+      #   workspace:
+      #     clean: all
+      #   steps:
+      #     - task: TerraformInstaller@2
+      #       displayName: 'Install Terraform'
+      #       inputs:
+      #         terraformVersion: 'latest'
+      #     - task: AzureCLI@2
+      #       inputs:
+      #         azureSubscription: "DTS-SHAREDSERVICESPTL-SBOX"
+      #         scriptType: "bash"
+      #         scriptLocation: "inlineScript"
+      #         inlineScript: |
+      #           terraform init
+      #           terraform test

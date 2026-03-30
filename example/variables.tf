@@ -1,3 +1,4 @@
 variable "env" {
-  default = "test"
+  default     = "sbox"
+  description = "Environment name, e.g. test, stg, prod"
 }

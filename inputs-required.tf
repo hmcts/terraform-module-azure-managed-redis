@@ -15,6 +15,7 @@ variable "product" {
 
 variable "project" {
   description = "Project name - sds or cft."
+  type        = string
 }
 
 variable "component" {
