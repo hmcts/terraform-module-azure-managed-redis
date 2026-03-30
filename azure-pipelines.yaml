@@ -79,6 +79,8 @@ stages:
                 product: ${{ variables.product }}
                 baseDirectory: ${{ variables.baseDirectory }}
                 backendResourceGroupName: 'azure-control-ptlsbox-rg'
+                tfVarsFile: "example.tfvars"
+
       # - job: TerraformTest
       #   pool:
       #     vmImage: ${{ variables.agentImage }}
