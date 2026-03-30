@@ -74,10 +74,10 @@ stages:
                 overrideAction: ${{ parameters.overrideAction }}
                 serviceConnection: ${{ variables.serviceConnection }}
                 environment: 'sbox'
-                component: 'example'
+                component: ''
                 terraformInitSubscription: 'DTS-SHAREDSERVICESPTL-SBOX'
                 product: ${{ variables.product }}
-                baseDirectory: ''
+                baseDirectory: ${{ variables.baseDirectory }}
       # - job: TerraformTest
       #   pool:
       #     vmImage: ${{ variables.agentImage }}
