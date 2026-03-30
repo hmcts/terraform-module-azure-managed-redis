@@ -75,9 +75,10 @@ stages:
                 serviceConnection: ${{ variables.serviceConnection }}
                 environment: 'sbox'
                 component: ''
-                terraformInitSubscription: 'HMCTS-CONTROL'
+                terraformInitSubscription: '04d27a32-7a07-48b3-95b8-3c8691e1a263' #HMCTS-CONTROL
                 product: ${{ variables.product }}
                 baseDirectory: ${{ variables.baseDirectory }}
+                backendResourceGroupName: 'azure-control-ptlsbox-rg'
       # - job: TerraformTest
       #   pool:
       #     vmImage: ${{ variables.agentImage }}
