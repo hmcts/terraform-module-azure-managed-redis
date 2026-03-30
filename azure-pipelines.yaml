@@ -24,6 +24,8 @@ variables:
     value: "DTS-SHAREDSERVICESPTL-SBOX"
   - name: baseDirectory
     value: example
+  - name: product
+    value: "core"
   - template: vars/input-variables.yaml@cnp-azuredevops-libraries
 
 

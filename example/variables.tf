@@ -9,5 +9,4 @@ variable "builtFrom" {
 
 variable "product" {
   description = "The source or origin of the product"
-  default     = "core"
 }
