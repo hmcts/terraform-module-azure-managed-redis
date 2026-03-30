@@ -75,7 +75,7 @@ stages:
               parameters:
                 overrideAction: ${{ parameters.overrideAction }}
                 serviceConnection: ${{ variables.serviceConnection }}
-                environment: 'sbox'
+                environment: 'sandbox'
                 component: ''
                 terraformInitSubscription: '04d27a32-7a07-48b3-95b8-3c8691e1a263' #HMCTS-CONTROL
                 product: ${{ variables.product }}
