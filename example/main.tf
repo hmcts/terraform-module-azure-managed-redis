@@ -6,10 +6,13 @@ module "managed_redis" {
   component = "cache"
   project   = "sds"
   common_tags = {
-    "managedBy"   = "Terraform"
-    "environment" = var.env
-    "product"     = "myapp"
-    "builtFrom"   = "https://github.com/hmcts/terraform-module-azure-managed-redis"
+    "managedBy"    = "Terraform"
+    "environment"  = var.env
+    "product"      = "myapp"
+    "application"  = "core"
+    "businessArea" = "sds"
+    "expiresAfter" = "3000-01-01"
+    "builtFrom"    = "https://github.com/hmcts/terraform-module-azure-managed-redis"
   }
 
   # SKU — Balanced_B3 (~6 GB, zone-redundant, suitable for non-prod / small prod)
