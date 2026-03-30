@@ -9,7 +9,7 @@ module "managed_redis" {
     "managedBy"    = "Terraform"
     "environment"  = var.env
     "application"  = "core"
-    "businessArea" = "sds"
+    "businessArea" = "Cross-Cutting"
     "expiresAfter" = "3000-01-01"
     "builtFrom"    = "https://github.com/hmcts/terraform-module-azure-managed-redis"
   }

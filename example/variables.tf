@@ -1,5 +1,5 @@
 variable "env" {
-  default     = "sbox"
+  default     = "sandbox"
   description = "Environment name, e.g. test, stg, prod"
 }
 variable "builtFrom" {
