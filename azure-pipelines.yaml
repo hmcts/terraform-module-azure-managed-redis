@@ -93,7 +93,7 @@ stages:
         workspace:
           clean: all
         steps:
-          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@2
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller
             displayName: 'Install Terraform'
             inputs:
               terraformVersion: 'latest'
