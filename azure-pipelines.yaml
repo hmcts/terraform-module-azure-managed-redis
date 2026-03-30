@@ -75,7 +75,7 @@ stages:
                 serviceConnection: ${{ variables.serviceConnection }}
                 environment: 'sbox'
                 component: ''
-                terraformInitSubscription: 'DTS-SHAREDSERVICESPTL-SBOX'
+                terraformInitSubscription: 'HMCTS-CONTROL'
                 product: ${{ variables.product }}
                 baseDirectory: ${{ variables.baseDirectory }}
       # - job: TerraformTest
