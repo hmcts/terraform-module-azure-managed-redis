@@ -30,7 +30,7 @@ module "managed_redis" {
   access_keys_authentication_enabled = true
   client_protocol                    = "Encrypted"
   clustering_policy                  = "OSSCluster"
-  eviction_policy                    = "VolatileLRU"
+  eviction_policy                    = "NoEviction"
 
   # Uncomment for RDB persistence (cannot be combined with geo-replication)
   persistence_rdb_backup_frequency = "6h"

@@ -42,6 +42,13 @@ resource "azurerm_managed_redis" "redis" {
   }
 
   tags = local.merged_tags
+
+  lifecycle {
+    precondition {
+      condition     = !contains([for m in var.redis_modules : m.name], "RediSearch") || var.eviction_policy == "NoEviction"
+      error_message = "When using the RediSearch module, eviction_policy must be set to 'NoEviction'."
+    }
+  }
 }
 
 resource "azurerm_monitor_diagnostic_setting" "redis_diag" {
