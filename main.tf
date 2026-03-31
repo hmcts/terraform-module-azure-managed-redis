@@ -48,6 +48,10 @@ resource "azurerm_managed_redis" "redis" {
       condition     = !contains([for m in var.redis_modules : m.name], "RediSearch") || var.eviction_policy == "NoEviction"
       error_message = "When using the RediSearch module, eviction_policy must be set to 'NoEviction'."
     }
+    precondition {
+      condition     = !contains([for m in var.redis_modules : m.name], "RediSearch") || var.clustering_policy == "EnterpriseCluster"
+      error_message = "When using the RediSearch module, clustering_policy must be set to 'EnterpriseCluster'."
+    }
   }
 }
 

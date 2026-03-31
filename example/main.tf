@@ -29,7 +29,7 @@ module "managed_redis" {
   # Database settings
   access_keys_authentication_enabled = true
   client_protocol                    = "Encrypted"
-  clustering_policy                  = "OSSCluster"
+  clustering_policy                  = "EnterpriseCluster"
   eviction_policy                    = "NoEviction"
 
   # Uncomment for RDB persistence (cannot be combined with geo-replication)
