@@ -27,19 +27,19 @@ module "managed_redis" {
   #   private_dns_zone_ids  = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-dns-rg/providers/Microsoft.Network/privateDnsZones/privatelink.redisenterprise.cache.azure.net"]
 
   # Database settings
-  access_keys_authentication_enabled = false # Use EntraID / RBAC auth
+  access_keys_authentication_enabled = true
   client_protocol                    = "Encrypted"
   clustering_policy                  = "OSSCluster"
   eviction_policy                    = "VolatileLRU"
 
   # Uncomment for RDB persistence (cannot be combined with geo-replication)
-  # persistence_rdb_backup_frequency = "6h"
+  persistence_rdb_backup_frequency = "6h"
 
   # Uncomment to enable Redis modules
-  # redis_modules = [
-  #   { name = "RediSearch" },
-  #   { name = "RedisJSON" },
-  # ]
+  redis_modules = [
+    { name = "RediSearch" },
+    { name = "RedisJSON" },
+  ]
 }
 
 output "redis_hostname" {
