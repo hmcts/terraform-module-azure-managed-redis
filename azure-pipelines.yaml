@@ -93,10 +93,10 @@ stages:
         workspace:
           clean: all
         steps:
-          - task: TerraformInstaller@2
+          - task: ms-devlabs.custom-terraform-tasks.custom-terraform-release-task.TerraformTask@5
             displayName: 'Install Terraform'
             inputs:
-              terraformVersion: '1.13.2'
+              terraformVersion: 'latest'
           - task: AzureCLI@2
             inputs:
               azureSubscription: "DTS-SHAREDSERVICESPTL-SBOX"
