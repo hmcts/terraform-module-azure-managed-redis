@@ -44,6 +44,31 @@ resource "azurerm_managed_redis" "redis" {
   tags = local.merged_tags
 }
 
+resource "azurerm_monitor_diagnostic_setting" "redis_diag" {
+  count = var.enable_diagnostic_settings ? 1 : 0
+
+  name                           = var.diagnostic_settings_name != "" ? var.diagnostic_settings_name : "${local.name}-${var.env}-diag"
+  target_resource_id             = azurerm_managed_redis.redis.id
+  log_analytics_workspace_id     = var.log_analytics_workspace_id
+  storage_account_id             = var.diagnostic_storage_account_id
+  eventhub_name                  = var.diagnostic_eventhub_name
+  eventhub_authorization_rule_id = var.diagnostic_eventhub_authorization_rule_id
+
+  dynamic "enabled_log" {
+    for_each = var.diagnostic_log_categories != null ? var.diagnostic_log_categories : []
+    content {
+      category = enabled_log.value
+    }
+  }
+
+  dynamic "metric" {
+    for_each = var.diagnostic_metric_categories != null ? var.diagnostic_metric_categories : ["AllMetrics"]
+    content {
+      category = metric.value
+    }
+  }
+}
+
 resource "azurerm_private_endpoint" "redis_pe" {
   count = var.subnet_id != null ? 1 : 0
 

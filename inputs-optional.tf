@@ -202,6 +202,56 @@ variable "vault_secret_path_prefix" {
   default     = "secret/terraform"
 }
 
+# ─── Diagnostic settings ──────────────────────────────────────────────────────
+
+variable "enable_diagnostic_settings" {
+  description = "Whether to create a diagnostic setting for the Managed Redis instance."
+  type        = bool
+  default     = false
+}
+
+variable "diagnostic_settings_name" {
+  description = "Name of the diagnostic setting. Defaults to '<name>-<env>-diag'."
+  type        = string
+  default     = ""
+}
+
+variable "log_analytics_workspace_id" {
+  description = "ID of the Log Analytics Workspace to send diagnostics to. Required when enable_diagnostic_settings is true."
+  type        = string
+  default     = null
+}
+
+variable "diagnostic_storage_account_id" {
+  description = "ID of the Storage Account to send diagnostics to. Optional."
+  type        = string
+  default     = null
+}
+
+variable "diagnostic_eventhub_name" {
+  description = "Name of the Event Hub to send diagnostics to. Optional."
+  type        = string
+  default     = null
+}
+
+variable "diagnostic_eventhub_authorization_rule_id" {
+  description = "ID of the Event Hub Namespace Authorization Rule to send diagnostics to. Required if diagnostic_eventhub_name is set."
+  type        = string
+  default     = null
+}
+
+variable "diagnostic_log_categories" {
+  description = "List of log categories to enable. Set to null to use the provider default (all categories). Example: [\"ConnectedClientList\"]."
+  type        = list(string)
+  default     = null
+}
+
+variable "diagnostic_metric_categories" {
+  description = "List of metric categories to enable. Set to null to use the provider default (all categories). Example: [\"AllMetrics\"]."
+  type        = list(string)
+  default     = null
+}
+
 # ─── Tagging compatibility ────────────────────────────────────────────────────
 
 variable "tags" {

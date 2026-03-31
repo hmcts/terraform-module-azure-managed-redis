@@ -50,6 +50,11 @@ output "private_endpoint_ip_address" {
   value       = length(azurerm_private_endpoint.redis_pe) > 0 ? azurerm_private_endpoint.redis_pe[0].private_service_connection[0].private_ip_address : null
 }
 
+output "diagnostic_setting_id" {
+  description = "The ID of the diagnostic setting, if created."
+  value       = length(azurerm_monitor_diagnostic_setting.redis_diag) > 0 ? azurerm_monitor_diagnostic_setting.redis_diag[0].id : null
+}
+
 # ─── Backward-compatible aliases (matching cpp-module-terraform-azurerm-redis) ─
 
 output "redis_cache_instance_id" {
