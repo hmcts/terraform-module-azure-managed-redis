@@ -81,7 +81,7 @@ resource "azurerm_monitor_diagnostic_setting" "redis_diag" {
 }
 
 resource "azurerm_private_endpoint" "redis_pe" {
-  count = var.subnet_id != null ? 1 : 0
+  count = var.create_private_endpoint ? 1 : 0
 
   name                = "${local.name}-${var.env}-pe"
   resource_group_name = local.resource_group_name

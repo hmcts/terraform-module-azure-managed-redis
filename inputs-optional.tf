@@ -145,8 +145,14 @@ variable "redis_modules" {
 
 # ─── Private endpoint ─────────────────────────────────────────────────────────
 
+variable "create_private_endpoint" {
+  description = "Set to true to create a private endpoint for the Managed Redis instance. Must be true when public_network_access is Disabled. Use this instead of relying on subnet_id being non-null so that Terraform can determine the count at plan time."
+  type        = bool
+  default     = false
+}
+
 variable "subnet_id" {
-  description = "ID of the subnet used to create a private endpoint for the Managed Redis instance. Required when public_network_access is Disabled."
+  description = "ID of the subnet used to create a private endpoint. Required when create_private_endpoint is true."
   type        = string
   default     = null
 }

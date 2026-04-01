@@ -22,7 +22,8 @@ module "managed_redis" {
   high_availability_enabled = true
 
   # Disable public access and route traffic via private endpoint
-  public_network_access = "Disabled"
+  public_network_access   = "Disabled"
+  create_private_endpoint = false
   #   subnet_id             = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-vnet-rg/providers/Microsoft.Network/virtualNetworks/my-vnet/subnets/redis-subnet"
   #   private_dns_zone_ids  = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-dns-rg/providers/Microsoft.Network/privateDnsZones/privatelink.redisenterprise.cache.azure.net"]
 
