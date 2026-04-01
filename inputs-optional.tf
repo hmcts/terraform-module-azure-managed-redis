@@ -259,3 +259,16 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+
+variable "product" {
+  description = "Name of the product, e.g. 'myapp'. Used in the default naming convention for resources."
+  type        = string
+  default     = null
+}
+
+variable "component" {
+  description = "Name of the component, e.g. 'cache', 'database', 'api'. Used in the default naming convention for resources."
+  type        = string
+  default     = null
+}

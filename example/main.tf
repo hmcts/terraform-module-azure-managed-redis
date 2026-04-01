@@ -4,7 +4,7 @@ module "managed_redis" {
   env       = var.env
   product   = "myapp"
   component = "cache"
-  project   = "sds"
+
   common_tags = {
     "managedBy"    = "Terraform"
     "environment"  = var.env
