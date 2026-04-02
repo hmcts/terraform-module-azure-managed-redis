@@ -1,5 +1,5 @@
 resource "azurerm_managed_redis" "redis" {
-  name                = "${local.name}-${var.env}"
+  name                = local.name
   resource_group_name = local.resource_group_name
   location            = local.resource_group_location
   sku_name            = var.sku_name
@@ -59,7 +59,7 @@ resource "azurerm_managed_redis" "redis" {
 resource "azurerm_monitor_diagnostic_setting" "redis_diag" {
   count = var.enable_diagnostic_settings ? 1 : 0
 
-  name                           = var.diagnostic_settings_name != "" ? var.diagnostic_settings_name : "${local.name}-${var.env}-diag"
+  name                           = var.diagnostic_settings_name != "" ? var.diagnostic_settings_name : "${local.name}-diag"
   target_resource_id             = azurerm_managed_redis.redis.id
   log_analytics_workspace_id     = var.log_analytics_workspace_id
   storage_account_id             = var.diagnostic_storage_account_id
@@ -84,13 +84,13 @@ resource "azurerm_monitor_diagnostic_setting" "redis_diag" {
 resource "azurerm_private_endpoint" "redis_pe" {
   count = var.create_private_endpoint ? 1 : 0
 
-  name                = "${local.name}-${var.env}-pe"
+  name                = "${local.name}-pe"
   resource_group_name = local.resource_group_name
   location            = local.resource_group_location
   subnet_id           = var.subnet_id
 
   private_service_connection {
-    name                           = "${local.name}-${var.env}-psc"
+    name                           = "${local.name}-psc"
     private_connection_resource_id = azurerm_managed_redis.redis.id
     is_manual_connection           = false
     subresource_names              = ["redisEnterprise"]
@@ -99,7 +99,7 @@ resource "azurerm_private_endpoint" "redis_pe" {
   dynamic "private_dns_zone_group" {
     for_each = length(var.private_dns_zone_ids) > 0 ? [1] : []
     content {
-      name                 = "${local.name}-${var.env}-dns-group"
+      name                 = "${local.name}-dns-group"
       private_dns_zone_ids = var.private_dns_zone_ids
     }
   }

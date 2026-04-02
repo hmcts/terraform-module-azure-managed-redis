@@ -1,7 +1,7 @@
 resource "vault_generic_secret" "managed_redis_access_keys" {
   count = var.enable_vault_secret ? 1 : 0
 
-  path = format("%s/%s/managedredis/%s-%s", var.vault_secret_path_prefix, local.vault_environment, local.name, var.env)
+  path = format("%s/%s/managedredis/%s", var.vault_secret_path_prefix, local.vault_environment, local.name)
 
   data_json = jsonencode({
     primary_access_key   = azurerm_managed_redis.redis.default_database[0].primary_access_key

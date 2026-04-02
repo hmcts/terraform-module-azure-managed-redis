@@ -1,5 +1,5 @@
 locals {
-  name = var.name != "" ? var.name : "${var.product}-${var.component}"
+  name = var.name != "" ? var.name : "${var.product}-${var.component}-${var.env}"
 
   resource_group_name     = var.existing_resource_group_name != null ? var.existing_resource_group_name : azurerm_resource_group.rg[0].name
   resource_group_location = var.existing_resource_group_name != null ? var.location : azurerm_resource_group.rg[0].location
