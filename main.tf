@@ -29,7 +29,8 @@ resource "azurerm_managed_redis" "redis" {
     for_each = var.identity_type != null ? [1] : []
     content {
       type         = var.identity_type
-      identity_ids = var.identity_ids
+      identity_ids = var.identity_type == "UserAssigned" || var.identity_type == "SystemAssigned, UserAssigned" ? var.identity_ids : null
+
     }
   }
 
