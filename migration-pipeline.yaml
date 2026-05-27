@@ -1,7 +1,12 @@
 name: Terraform Azure Redis Migration
-trigger: none
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
 pr:
-- main
+  - main
 
 resources:
   repositories:
