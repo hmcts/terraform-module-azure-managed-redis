@@ -22,7 +22,15 @@ Further information can be found by viewing this module's example folder, 'input
 
 ## Quickstart
 
-1) Infrastructure Code change. Example PR: 
+1) Infrastructure Code change. Example PRs:
+
+    [Darts repo](https://github.com/hmcts/darts-shared-infrastructure/pull/380/changes) 
+
+    [identical PR located in Plum repo](https://github.com/hmcts/cnp-plum-recipes-service/pull/1324/changes)
+
+    example folder, see example/main.tf in this repo
+
+
 
 2) Run your infrastructure deployment pipeline for chosen environment 
 
