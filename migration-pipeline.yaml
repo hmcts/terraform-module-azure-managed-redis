@@ -1,0 +1,100 @@
+name: Terraform Azure Redis Migration
+trigger: none
+pr:
+- main
+
+resources:
+  repositories:
+    - repository: cnp-azuredevops-libraries
+      type: github
+      ref: refs/heads/master
+      name: hmcts/cnp-azuredevops-libraries
+      endpoint: "hmcts"
+
+parameters:
+  - name: aksClusterName
+    type: string
+    default: "ss-sbox-00-aks"
+  - name: sourceRedisHost
+    type: string
+    default: ""
+  - name: sourceRedisKey
+    type: string
+    default: ""
+  - name: targetRedisHost
+    type: string
+    default: ""
+  - name: targetRedisKey
+    type: string
+    default: ""
+
+variables:
+  - template: vars/input-variables.yaml@cnp-azuredevops-libraries
+  - name: timeoutInMinutes
+    value: 60
+  - name: agentImage
+    value: ubuntu-24.04
+  - name: serviceConnection
+    value: "DTS-SHAREDSERVICESPTL-SBOX"
+  - name: aksResourceGroup
+    value: "cft-sbox-00-rg"
+
+stages:
+  - stage: Precheck
+    jobs:
+      - job: PrecheckJob
+        pool:
+          vmImage: ${{ variables.agentImage }}
+        steps:
+          - template: steps/terraform-precheck.yaml@cnp-azuredevops-libraries
+            parameters:
+              keyvaultName: "infra-vault-nonprod"
+              keyvaultSecret: "azure-devops-sp-token"
+              serviceConnection: "azurerm-sandbox"
+              overrideAction: "plan"
+              forcePreventParallelJobRun: true
+
+  - stage: migrate_redis_data
+    pool:
+      vmImage: ${{ variables.agentImage }}
+    jobs:
+    - job: redis_migration
+      displayName: 'Migrate Redis Data to Azure Managed Redis'
+      timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+      steps:
+      - task: AzureCLI@2
+        displayName: 'Connect to AKS Cluster'
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            echo "Connecting to AKS cluster..."
+            az aks get-credentials \
+              --resource-group $(aksResourceGroup) \
+              --name $(aksClusterName) \
+              --overwrite-existing
+            
+            echo "Verifying connection..."
+            kubectl get nodes
+
+      - task: AzureCLI@2
+        displayName: Run Redis Migration in Pod
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            echo "Testing Redis connections from AKS pod..."
+            kubectl run redis-test --rm -i --restart=Never \
+              --image=redis:7-alpine \
+              --namespace=plum \
+              --command -- sh -c '
+                echo "Testing source Redis connection..."
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "${{ parameters.sourceRedisKey }}" PING
+                
+                echo "Testing target Redis connection..."
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "${{ parameters.targetRedisKey }}" PING
+                
+                echo "Connection tests complete"
+              '
