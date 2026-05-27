@@ -19,7 +19,7 @@ resources:
 parameters:
   - name: aksClusterName
     type: string
-    default: "ss-sbox-00-aks"
+    default: "cft-sbox-00-aks"
   - name: sourceRedisHost
     type: string
     default: ""
