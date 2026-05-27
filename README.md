@@ -2,6 +2,8 @@
 
 Terraform module for [Azure Managed Redis](https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/managed-redis/managed-redis-overview).
 
+Further documentation including migration help and troubleshooting can be found in the MIGRATION.md file.
+
 ## Example
 
 ```hcl
