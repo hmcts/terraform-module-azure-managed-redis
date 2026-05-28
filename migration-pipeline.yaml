@@ -97,7 +97,7 @@ stages:
               --namespace=redis-migration \
               -- sh -c "
                 redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' PING
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a '${TARGET_REDIS_KEY}' PING
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -a '${TARGET_REDIS_KEY}' PING
               "
             kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
@@ -122,7 +122,7 @@ stages:
                   --scan | while read key; do
                     redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "${SOURCE_REDIS_KEY}" \
                       DUMP "$key" | redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 \
-                      --tls --user default -a "${TARGET_REDIS_KEY}" \
+                      --tls -a "${TARGET_REDIS_KEY}" \
                       -x RESTORE "$key" 0 REPLACE
                     echo "Migrated: $key"
                   done
