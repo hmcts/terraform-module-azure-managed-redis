@@ -97,19 +97,29 @@ stages:
                     command: [sh, -c]
                     args:
                     - |
+                      echo "Testing connections..."
                       redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" PING || exit 1
                       redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" PING || exit 1
                       
-                      redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" --scan | while read k; do
-                        T=\$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" PTTL "\$k")
-                        V=\$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" GET "\$k")
-                        redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" SET "\$k" "\$V"
-                        [ "\$T" != "-1" ] && [ "\$T" -gt "0" ] && redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" PEXPIRE "\$k" "\$T"
-                        echo "✓ \$k"
+                      echo "Migrating keys..."
+                      redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" --scan | while read key; do
+                        # Get TTL and value from source
+                        ttl=\$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" PTTL "\$key")
+                        value=\$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" GET "\$key")
+                        
+                        # Set key in target
+                        redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" SET "\$key" "\$value"
+                        
+                        # Set TTL if key has expiration
+                        [ "\$ttl" -gt "0" ] && redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" PEXPIRE "\$key" "\$ttl"
+                        
+                        echo "✓ \$key"
                       done
                       
-                      echo "Source: \$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" DBSIZE)"
-                      echo "Target: \$(redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" DBSIZE)"
+                      echo ""
+                      echo "Migration complete!"
+                      echo "Source keys: \$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" DBSIZE)"
+                      echo "Target keys: \$(redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" DBSIZE)"
             EOF
             
             kubectl wait --for=condition=complete --timeout=1800s job/$JOB_NAME -n redis-migration
