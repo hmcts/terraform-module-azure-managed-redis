@@ -54,33 +54,16 @@ stages:
               overrideAction: "plan"
               forcePreventParallelJobRun: true
 
-  # - stage: check_connection
-  #   pool:
-  #     vmImage: ${{ variables.agentImage }}
-  #   jobs:
-  #   - job: redis_migration
-  #     displayName: 'Migrate Redis Data to Azure Managed Redis'
-  #     timeoutInMinutes: ${{ variables.timeoutInMinutes }}
-  #     steps:
-  #     - task: AzureCLI@2
-  #       displayName: Get AKS Credentials
-  #       inputs:
-  #         azureSubscription: $(serviceConnection)
-  #         scriptType: bash
-  #         scriptLocation: inlineScript
-  #         inlineScript: |
-  #           echo "Getting AKS credentials..."
-  #           az aks get-credentials \
-  #             --resource-group $(aksResourceGroup) \
-  #             --name ${{ parameters.aksClusterName }} \
-  #             --admin \
-  #             --overwrite-existing
-            
-  #           echo "Verifying kubectl connection..."
-  #           kubectl cluster-info
-
+  - stage: check_connection
+    pool:
+      vmImage: ${{ variables.agentImage }}
+    jobs:
+    - job: redis_migration
+      displayName: 'Test Redis Connectivity'
+      timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+      steps:
       - task: AzureCLI@2
-        displayName: Run Redis Migration in Pod
+        displayName: Test Redis Connection
         inputs:
           azureSubscription: $(serviceConnection)
           scriptType: bash
