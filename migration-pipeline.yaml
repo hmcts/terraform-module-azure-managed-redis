@@ -86,13 +86,13 @@ stages:
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
-            echo "Running Redis connectivity test in AKS pod..."
-            kubectl run redis-test \
-              --rm -i \
-              --restart=Never \
+            echo "Creating Kubernetes Job for Redis connectivity test..."
+            JOB_NAME="redis-test-$(date +%s)"
+            
+            kubectl create job $JOB_NAME \
               --image=redis:7-alpine \
-              --namespace=cnp \
-              --command -- sh -c '
+              --namespace=admin \
+              -- sh -c '
                 echo "Testing source Redis connection..."
                 redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING
                 
@@ -100,7 +100,16 @@ stages:
                 redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$TARGET_REDIS_KEY" PING
                 
                 echo "Connection tests complete"
-              '
+    
+            echo "Waiting for job to complete..."
+            kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n admin || true
+            
+            echo "Job logs:"
+            POD_NAME=$(kubectl get pods -n admin -l job-name=$JOB_NAME -o jsonpath='{.items[0].metadata.name}')
+            kubectl logs $POD_NAME -n admin
+            
+            echo "Cleaning up job..."
+            kubectl delete job $JOB_NAME -n admin
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
           TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
