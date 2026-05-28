@@ -69,11 +69,14 @@ stages:
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
-                echo "Testing source Redis connection..."
-                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$(source-redis-key)" PING
-                
-                echo "Testing target Redis connection..."
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -a "$(target-redis-key)" PING
-                
-                echo "Connection tests complete"
-              
+            echo "Installing redis-cli..."
+            sudo apt-get update
+            sudo apt-get install -y redis-tools
+            
+            echo "Testing source Redis connection..."
+            redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$(source-redis-key)" PING
+            
+            echo "Testing target Redis connection..."
+            redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
+            
+            echo "Connection tests complete"
