@@ -78,23 +78,3 @@ stages:
                 echo "Connection tests complete"
               '
 
-      # - task: AzureCLI@2
-      #   displayName: Run Redis Migration in Pod
-      #   inputs:
-      #     azureSubscription: $(serviceConnection)
-      #     scriptType: bash
-      #     scriptLocation: inlineScript
-      #     inlineScript: |
-      #       echo "Testing Redis connections from AKS pod..."
-      #       kubectl run redis-test --rm -i --restart=Never \
-      #         --image=redis:7-alpine \
-      #         --namespace=plum \
-      #         --command -- sh -c '
-      #           echo "Testing source Redis connection..."
-      #           redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$(source-redis-key)" PING
-                
-      #           echo "Testing target Redis connection..."
-      #           redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
-                
-      #           echo "Connection tests complete"
-      #         '
