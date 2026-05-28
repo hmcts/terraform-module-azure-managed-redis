@@ -73,25 +73,6 @@ stages:
             sudo mv bin/linux_amd64/kubelogin /usr/local/bin/
             sudo chmod +x /usr/local/bin/kubelogin
             kubelogin --version
-      
-      - task: AzureCLI@2
-        displayName: 'Connect to AKS Cluster'
-        inputs:
-          azureSubscription: $(serviceConnection)
-          scriptType: bash
-          scriptLocation: inlineScript
-          inlineScript: |
-            echo "Connecting to AKS cluster..."
-            az aks get-credentials \
-              --resource-group ${{ variables.aksResourceGroup }} \
-              --name ${{ parameters.aksClusterName }} \
-              --overwrite-existing
-            
-            echo "Converting to kubelogin..."
-            kubelogin convert-kubeconfig -l azurecli
-            
-            echo "Verifying connection..."
-            kubectl get nodes
 
       - task: AzureCLI@2
         displayName: Run Redis Migration in Pod
@@ -112,4 +93,44 @@ stages:
                 redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
                 
                 echo "Connection tests complete"
+              '
+
+      - task: AzureCLI@2
+        displayName: 'Connect to AKS Cluster'
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            echo "Connecting to AKS cluster..."
+            az aks get-credentials \
+              --resource-group ${{ variables.aksResourceGroup }} \
+              --name ${{ parameters.aksClusterName }} \
+              --overwrite-existing
+            
+            echo "Converting to kubelogin..."
+            kubelogin convert-kubeconfig -l azurecli
+            
+            echo "Verifying connection..."
+            kubectl get nodes
+
+      # - task: AzureCLI@2
+      #   displayName: Run Redis Migration in Pod
+      #   inputs:
+      #     azureSubscription: $(serviceConnection)
+      #     scriptType: bash
+      #     scriptLocation: inlineScript
+      #     inlineScript: |
+      #       echo "Testing Redis connections from AKS pod..."
+      #       kubectl run redis-test --rm -i --restart=Never \
+      #         --image=redis:7-alpine \
+      #         --namespace=plum \
+      #         --command -- sh -c '
+      #           echo "Testing source Redis connection..."
+      #           redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$(source-redis-key)" PING
+                
+      #           echo "Testing target Redis connection..."
+      #           redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
+                
+      #           echo "Connection tests complete"
               '
