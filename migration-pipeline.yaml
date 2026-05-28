@@ -76,5 +76,4 @@ stages:
                 redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -a "$(target-redis-key)" PING
                 
                 echo "Connection tests complete"
-              '
-
+              
