@@ -82,7 +82,7 @@ stages:
             kubectl cluster-info
 
       - task: AzureCLI@2
-        displayName: Test Redis Connections
+        displayName: Azure_Redis_Migration
         inputs:
           azureSubscription: $(serviceConnection)
           scriptType: bash
