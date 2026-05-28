@@ -54,7 +54,7 @@ stages:
               overrideAction: "plan"
               forcePreventParallelJobRun: true
 
-  - stage: migrate_redis_data
+  - stage: check_connection
     pool:
       vmImage: ${{ variables.agentImage }}
     jobs:
@@ -73,7 +73,7 @@ stages:
                 redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$(source-redis-key)" PING
                 
                 echo "Testing target Redis connection..."
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -a "$(target-redis-key)" PING
                 
                 echo "Connection tests complete"
               '
