@@ -62,17 +62,24 @@ stages:
       displayName: 'Migrate Redis Data to Azure Managed Redis'
       timeoutInMinutes: ${{ variables.timeoutInMinutes }}
       steps:
-      - task: Bash@3
-        displayName: 'Install kubelogin'
+      - task: AzureCLI@2
+        displayName: 'Connect to AKS Cluster'
         inputs:
-          targetType: 'inline'
-          script: |
-            echo "Installing kubelogin..."
-            curl -LO https://github.com/Azure/kubelogin/releases/download/v0.1.5/kubelogin-linux-amd64.zip
-            unzip kubelogin-linux-amd64.zip
-            sudo mv bin/linux_amd64/kubelogin /usr/local/bin/
-            sudo chmod +x /usr/local/bin/kubelogin
-            kubelogin --version
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            echo "Connecting to AKS cluster..."
+            az aks get-credentials \
+              --resource-group ${{ variables.aksResourceGroup }} \
+              --name ${{ parameters.aksClusterName }} \
+              --overwrite-existing
+            
+            echo "Converting to kubelogin..."
+            kubelogin convert-kubeconfig -l azurecli
+            
+            echo "Verifying connection..."
+            kubectl get nodes
 
       - task: AzureCLI@2
         displayName: Run Redis Migration in Pod
@@ -93,26 +100,7 @@ stages:
                 redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
                 
                 echo "Connection tests complete"
-              
-
-      - task: AzureCLI@2
-        displayName: 'Connect to AKS Cluster'
-        inputs:
-          azureSubscription: $(serviceConnection)
-          scriptType: bash
-          scriptLocation: inlineScript
-          inlineScript: |
-            echo "Connecting to AKS cluster..."
-            az aks get-credentials \
-              --resource-group ${{ variables.aksResourceGroup }} \
-              --name ${{ parameters.aksClusterName }} \
-              --overwrite-existing
-            
-            echo "Converting to kubelogin..."
-            kubelogin convert-kubeconfig -l azurecli
-            
-            echo "Verifying connection..."
-            kubectl get nodes
+              '
 
       # - task: AzureCLI@2
       #   displayName: Run Redis Migration in Pod
