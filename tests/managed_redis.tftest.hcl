@@ -13,6 +13,7 @@ variables {
   project   = "sds"
 }
 
+
 run "setup" {
   module {
     source = "./tests/modules/setup"
@@ -25,7 +26,7 @@ run "managed_redis_plan" {
 
   variables {
     common_tags = run.setup.common_tags
-    sku_name    = "Balanced_B3"
+    sku_name    = "Balanced_B0"
     location    = "UK South"
 
     high_availability_enabled          = true
@@ -42,7 +43,7 @@ run "managed_redis_plan" {
   }
 
   assert {
-    condition     = azurerm_managed_redis.redis.sku_name == "Balanced_B3"
+    condition     = azurerm_managed_redis.redis.sku_name == "Balanced_B0"
     error_message = "SKU name does not match expected value"
   }
 
@@ -78,17 +79,17 @@ run "managed_redis_plan" {
 }
 
 run "managed_redis_custom_name" {
-
+# specifying name should result in custom name provided rather than building name from vars
   command = plan
 
   variables {
-    name        = "custom-redis"
+    name        = "my-customname-redis"
     common_tags = run.setup.common_tags
-    sku_name    = "Balanced_B3"
+    sku_name    = "Balanced_B0"
   }
 
   assert {
-    condition     = azurerm_managed_redis.redis.name == "custom-redis-sandbox"
+    condition     = azurerm_managed_redis.redis.name == "my-customname-redis"
     error_message = "Redis instance name does not match custom name"
   }
 }
@@ -99,7 +100,7 @@ run "managed_redis_resource_group" {
 
   variables {
     common_tags = run.setup.common_tags
-    sku_name    = "Balanced_B3"
+    sku_name    = "Balanced_B0"
   }
 
   assert {
