@@ -63,25 +63,6 @@ stages:
       timeoutInMinutes: ${{ variables.timeoutInMinutes }}
       steps:
       - task: AzureCLI@2
-        displayName: 'Connect to AKS Cluster'
-        inputs:
-          azureSubscription: $(serviceConnection)
-          scriptType: bash
-          scriptLocation: inlineScript
-          inlineScript: |
-            echo "Connecting to AKS cluster..."
-            az aks get-credentials \
-              --resource-group ${{ variables.aksResourceGroup }} \
-              --name ${{ parameters.aksClusterName }} \
-              --overwrite-existing
-            
-            echo "Converting to kubelogin..."
-            kubelogin convert-kubeconfig -l azurecli
-            
-            echo "Verifying connection..."
-            kubectl get nodes
-
-      - task: AzureCLI@2
         displayName: Run Redis Migration in Pod
         inputs:
           azureSubscription: $(serviceConnection)
