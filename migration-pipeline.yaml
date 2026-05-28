@@ -91,7 +91,6 @@ stages:
               --rm -i \
               --restart=Never \
               --image=redis:7-alpine \
-              --namespace=plum \
               --command -- sh -c '
                 echo "Testing source Redis connection..."
                 redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING
