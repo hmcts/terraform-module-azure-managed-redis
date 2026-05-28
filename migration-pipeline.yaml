@@ -99,8 +99,8 @@ stages:
                 echo "Testing target Redis connection..."
                 redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$TARGET_REDIS_KEY" PING
                 
-                echo "Connection tests complete"
-    
+                echo "Connection tests complete" '
+            
             echo "Waiting for job to complete..."
             kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n admin || true
             
