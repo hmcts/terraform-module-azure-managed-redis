@@ -13,6 +13,9 @@ variables {
   project   = "sds"
 }
 
+
+# description = "The default name will be product+component+env, you can override the product+component part by setting this"
+
 run "setup" {
   module {
     source = "./tests/modules/setup"
@@ -82,13 +85,13 @@ run "managed_redis_custom_name" {
   command = plan
 
   variables {
-    name        = "custom-redis"
+    name        = "my-customname-redis"
     common_tags = run.setup.common_tags
     sku_name    = "Balanced_B3"
   }
 
   assert {
-    condition     = azurerm_managed_redis.redis.name == "custom-redis-sandbox"
+    condition     = azurerm_managed_redis.redis.name == "my-customname-redis"
     error_message = "Redis instance name does not match custom name"
   }
 }
