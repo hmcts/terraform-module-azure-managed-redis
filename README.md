@@ -10,7 +10,6 @@ module "managed_redis" {
   ...
 }
 ```
-Example change to trigger PR.
 
 ## Deploying the Example
 

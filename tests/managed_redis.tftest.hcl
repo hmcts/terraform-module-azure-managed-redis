@@ -14,8 +14,6 @@ variables {
 }
 
 
-# description = "The default name will be product+component+env, you can override the product+component part by setting this"
-
 run "setup" {
   module {
     source = "./tests/modules/setup"
@@ -81,7 +79,7 @@ run "managed_redis_plan" {
 }
 
 run "managed_redis_custom_name" {
-
+# specifying name should result in custom name provided rather than building name from vars
   command = plan
 
   variables {
