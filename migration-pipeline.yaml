@@ -54,12 +54,12 @@ stages:
               overrideAction: "plan"
               forcePreventParallelJobRun: true
 
-  - stage: check_connection
-    displayName: 'Check Redis Connectivity'
+  - stage: migrate_data
+    displayName: 'Test Connection and Migrate Redis Data'
     dependsOn: Precheck
     jobs:
-    - job: test_connection
-      displayName: 'Test Redis Connections'
+    - job: redis_migration
+      displayName: 'Redis Migration'
       pool:
         vmImage: ${{ variables.agentImage }}
       timeoutInMinutes: ${{ variables.timeoutInMinutes }}
@@ -99,22 +99,11 @@ stages:
               "
             kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
-            kubectl delete namespace redis-migration --ignore-not-found=true
+            kubectl delete job $JOB_NAME -n redis-migration
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
           TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
 
-    
-  - stage: migrate_data
-    displayName: 'Migrate Redis Data'
-    dependsOn: check_connection
-    jobs:
-    - job: redis_migration
-      displayName: 'Execute Data Migration'
-      pool:
-        vmImage: ${{ variables.agentImage }}
-      timeoutInMinutes: ${{ variables.timeoutInMinutes }}
-      steps:
       - task: AzureCLI@2
         displayName: Migrate Redis Data
         inputs:
@@ -122,8 +111,6 @@ stages:
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
-            kubectl create namespace redis-migration || true
-            
             JOB_NAME="redis-migrate-$(date +%s)"
             
             kubectl create job $JOB_NAME \
