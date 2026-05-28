@@ -55,11 +55,13 @@ stages:
               forcePreventParallelJobRun: true
 
   - stage: check_connection
-    pool:
-      vmImage: ${{ variables.agentImage }}
+    displayName: 'Check Redis Connectivity'
+    dependsOn: Precheck
     jobs:
-    - job: redis_migration
-      displayName: 'Migrate Redis Data to Azure Managed Redis'
+    - job: test_connection
+      displayName: 'Test Redis Connections'
+      pool:
+        vmImage: ${{ variables.agentImage }}
       timeoutInMinutes: ${{ variables.timeoutInMinutes }}
       steps:
       - task: AzureCLI@2
@@ -102,6 +104,17 @@ stages:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
           TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
 
+    
+  - stage: migrate_data
+    displayName: 'Migrate Redis Data'
+    dependsOn: check_connection
+    jobs:
+    - job: redis_migration
+      displayName: 'Execute Data Migration'
+      pool:
+        vmImage: ${{ variables.agentImage }}
+      timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+      steps:
       - task: AzureCLI@2
         displayName: Migrate Redis Data
         inputs:
