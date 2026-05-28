@@ -93,7 +93,7 @@ stages:
                 redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
                 
                 echo "Connection tests complete"
-              '
+              
 
       - task: AzureCLI@2
         displayName: 'Connect to AKS Cluster'
@@ -133,4 +133,4 @@ stages:
       #           redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$(target-redis-key)" PING
                 
       #           echo "Connection tests complete"
-              '
+      #         '
