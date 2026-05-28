@@ -88,7 +88,9 @@ stages:
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
+            echo "Creating namespace for Redis migration..."
             kubectl create namespace redis-migration || true
+            
             JOB_NAME="redis-test-$(date +%s)"
             kubectl create job $JOB_NAME \
               --image=redis:7-alpine \
@@ -99,7 +101,6 @@ stages:
               "
             kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
-            kubectl delete job $JOB_NAME -n redis-migration
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
           TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
@@ -128,6 +129,8 @@ stages:
             
             kubectl wait --for=condition=complete --timeout=1800s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
+            
+            echo "Cleaning up namespace..."
             kubectl delete namespace redis-migration --ignore-not-found=true
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
