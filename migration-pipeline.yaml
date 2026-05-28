@@ -86,30 +86,30 @@ stages:
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
+            kubectl create namespace redis-migration || true
+            
             echo "Creating Kubernetes Job for Redis connectivity test..."
             JOB_NAME="redis-test-$(date +%s)"
             
             kubectl create job $JOB_NAME \
               --image=redis:7-alpine \
-              --namespace=admin \
-              -- sh -c '
-                echo "Testing source Redis connection..."
-                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING
+              --namespace=redis-migration \
+              -- sh -c "
+                echo 'Testing source Redis connection...'
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' PING
                 
-                echo "Testing target Redis connection..."
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$TARGET_REDIS_KEY" PING
+                echo 'Testing target Redis connection...'
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a '${TARGET_REDIS_KEY}' PING
                 
-                echo "Connection tests complete" '
+                echo 'Connection tests complete' "
             
-            echo "Waiting for job to complete..."
-            kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n admin || true
+            kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration || true
             
             echo "Job logs:"
-            POD_NAME=$(kubectl get pods -n admin -l job-name=$JOB_NAME -o jsonpath='{.items[0].metadata.name}')
-            kubectl logs $POD_NAME -n admin
+            POD_NAME=$(kubectl get pods -n redis-migration -l job-name=$JOB_NAME -o jsonpath='{.items[0].metadata.name}')
+            kubectl logs $POD_NAME -n redis-migration
             
-            echo "Cleaning up job..."
-            kubectl delete job $JOB_NAME -n admin
+            kubectl delete namespace redis-migration --ignore-not-found=true
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
           TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
