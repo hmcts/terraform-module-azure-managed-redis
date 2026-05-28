@@ -55,7 +55,7 @@ stages:
               forcePreventParallelJobRun: true
 
   - stage: migrate_data
-    displayName: 'Test Connection and Migrate Redis Data'
+    displayName: 'Azure_Redis_Migration'
     dependsOn: Precheck
     jobs:
     - job: redis_migration
@@ -82,7 +82,7 @@ stages:
             kubectl cluster-info
 
       - task: AzureCLI@2
-        displayName: Azure_Redis_Migration
+        displayName: Test Redis Connections
         inputs:
           azureSubscription: $(serviceConnection)
           scriptType: bash
