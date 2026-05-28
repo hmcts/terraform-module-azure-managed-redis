@@ -80,7 +80,30 @@ stages:
             kubectl cluster-info
 
       - task: AzureCLI@2
-        displayName: Run Redis Migration in Pod
+        displayName: Test Redis Connections
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            kubectl create namespace redis-migration || true
+            JOB_NAME="redis-test-$(date +%s)"
+            kubectl create job $JOB_NAME \
+              --image=redis:7-alpine \
+              --namespace=redis-migration \
+              -- sh -c "
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' PING
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a '${TARGET_REDIS_KEY}' PING
+              "
+            kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration
+            kubectl logs -l job-name=$JOB_NAME -n redis-migration
+            kubectl delete namespace redis-migration --ignore-not-found=true
+        env:
+          SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
+          TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
+
+      - task: AzureCLI@2
+        displayName: Migrate Redis Data
         inputs:
           azureSubscription: $(serviceConnection)
           scriptType: bash
@@ -88,27 +111,23 @@ stages:
           inlineScript: |
             kubectl create namespace redis-migration || true
             
-            echo "Creating Kubernetes Job for Redis connectivity test..."
-            JOB_NAME="redis-test-$(date +%s)"
+            JOB_NAME="redis-migrate-$(date +%s)"
             
             kubectl create job $JOB_NAME \
               --image=redis:7-alpine \
               --namespace=redis-migration \
               -- sh -c "
-                echo 'Testing source Redis connection...'
-                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' PING
-                
-                echo 'Testing target Redis connection...'
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a '${TARGET_REDIS_KEY}' PING
-                
-                echo 'Connection tests complete' "
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' \
+                  --scan --pattern '*' | while read key; do
+                    redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' \
+                      DUMP \"\$key\" | redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 \
+                      --tls --user default -a '${TARGET_REDIS_KEY}' \
+                      -x RESTORE \"\$key\" 0 REPLACE
+                done
+              "
             
-            kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration || true
-            
-            echo "Job logs:"
-            POD_NAME=$(kubectl get pods -n redis-migration -l job-name=$JOB_NAME -o jsonpath='{.items[0].metadata.name}')
-            kubectl logs $POD_NAME -n redis-migration
-            
+            kubectl wait --for=condition=complete --timeout=1800s job/$JOB_NAME -n redis-migration
+            kubectl logs -l job-name=$JOB_NAME -n redis-migration
             kubectl delete namespace redis-migration --ignore-not-found=true
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
