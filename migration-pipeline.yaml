@@ -59,27 +59,57 @@ stages:
       vmImage: ${{ variables.agentImage }}
     jobs:
     - job: redis_migration
-      displayName: 'Test Redis Connectivity'
+      displayName: 'Migrate Redis Data to Azure Managed Redis'
       timeoutInMinutes: ${{ variables.timeoutInMinutes }}
       steps:
       - task: AzureCLI@2
-        displayName: Test Redis Connection
+        displayName: Get AKS Credentials
         inputs:
           azureSubscription: $(serviceConnection)
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
-            echo "Installing redis-cli..."
-            sudo apt-get update
-            sudo apt-get install -y redis-tools
+            echo "Getting AKS credentials..."
+            az aks get-credentials \
+              --resource-group $(aksResourceGroup) \
+              --name ${{ parameters.aksClusterName }} \
+              --admin \
+              --overwrite-existing
             
-            echo "Testing source Redis connection..."
-            redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING
+            echo "Verifying kubectl connection..."
+            kubectl cluster-info
+
+      - task: AzureCLI@2
+        displayName: Run Redis Migration in Pod
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            echo "Creating Kubernetes Job for Redis connectivity test..."
+            JOB_NAME="redis-test-$(date +%s)"
             
-            echo "Testing target Redis connection..."
-            redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$TARGET_REDIS_KEY" PING
+            kubectl create job $JOB_NAME \
+              --image=redis:7-alpine \
+              --namespace=admin \
+              -- sh -c '
+                echo "Testing source Redis connection..."
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING
+                
+                echo "Testing target Redis connection..."
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls --user default -a "$TARGET_REDIS_KEY" PING
+                
+                echo "Connection tests complete" '
             
-            echo "Connection tests complete"
+            echo "Waiting for job to complete..."
+            kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n admin || true
+            
+            echo "Job logs:"
+            POD_NAME=$(kubectl get pods -n admin -l job-name=$JOB_NAME -o jsonpath='{.items[0].metadata.name}')
+            kubectl logs $POD_NAME -n admin
+            
+            echo "Cleaning up job..."
+            kubectl delete job $JOB_NAME -n admin
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
           TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
