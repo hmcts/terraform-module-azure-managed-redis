@@ -95,9 +95,11 @@ stages:
             kubectl create job $JOB_NAME \
               --image=redis:7-alpine \
               --namespace=redis-migration \
+              --env="SOURCE_REDIS_KEY=${SOURCE_REDIS_KEY}" \
+              --env="TARGET_REDIS_KEY=${TARGET_REDIS_KEY}" \
               -- sh -c "
-                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a '${SOURCE_REDIS_KEY}' PING
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -a '${TARGET_REDIS_KEY}' PING
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a \"\${SOURCE_REDIS_KEY}\" PING
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -a \"\${TARGET_REDIS_KEY}\" PING
               "
             kubectl wait --for=condition=complete --timeout=300s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
@@ -117,16 +119,18 @@ stages:
             kubectl create job $JOB_NAME \
               --image=redis:7-alpine \
               --namespace=redis-migration \
-              -- sh -c '
-                redis-cli -c -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "${SOURCE_REDIS_KEY}" \
-                  --scan --pattern "*" | while read key; do
-                    echo "Migrating: $key"
-                    redis-cli -c -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "${SOURCE_REDIS_KEY}" \
-                      --raw DUMP "$key" | redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 \
-                      --tls -a "${TARGET_REDIS_KEY}" \
-                      -x RESTORE "$key" 0 REPLACE
+              --env="SOURCE_REDIS_KEY=${SOURCE_REDIS_KEY}" \
+              --env="TARGET_REDIS_KEY=${TARGET_REDIS_KEY}" \
+              -- sh -c "
+                redis-cli -c -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a \"\${SOURCE_REDIS_KEY}\" \
+                  --scan --pattern \"*\" | while read key; do
+                    echo \"Migrating: \$key\"
+                    redis-cli -c -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a \"\${SOURCE_REDIS_KEY}\" \
+                      --raw DUMP \"\$key\" | redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 \
+                      --tls -a \"\${TARGET_REDIS_KEY}\" \
+                      -x RESTORE \"\$key\" 0 REPLACE
                   done
-              '
+              "
             kubectl wait --for=condition=complete --timeout=1800s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
             kubectl delete namespace redis-migration --ignore-not-found=true
