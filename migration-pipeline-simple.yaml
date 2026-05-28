@@ -1,0 +1,74 @@
+name: Redis Migration (Simplified)
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+pr:
+  - main
+
+resources:
+  repositories:
+    - repository: cnp-azuredevops-libraries
+      type: github
+      ref: refs/heads/master
+      name: hmcts/cnp-azuredevops-libraries
+      endpoint: "hmcts"
+
+parameters:
+  - name: aksClusterName
+    type: string
+    default: "cft-sbox-00-aks"
+  - name: sourceRedisHost
+    type: string
+  - name: targetRedisHost
+    type: string
+  - name: sourceRedisPort
+    type: string
+    default: "6380"
+  - name: targetRedisPort
+    type: string
+    default: "10000"
+
+variables:
+  - template: vars/input-variables.yaml@cnp-azuredevops-libraries
+  - name: serviceConnection
+    value: "DCD-CFTAPPS-SBOX"
+  - name: aksResourceGroup
+    value: "cft-sbox-00-rg"
+  - group: redis-migration-secrets
+
+stages:
+  - stage: Migrate
+    jobs:
+    - job: migrate_redis
+      pool:
+        vmImage: ubuntu-24.04
+      timeoutInMinutes: 60
+      steps:
+      - task: AzureCLI@2
+        displayName: Migrate
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            az aks get-credentials --resource-group $(aksResourceGroup) --name ${{ parameters.aksClusterName }} --admin --overwrite-existing
+            
+            kubectl run redis-migrate --rm -i --restart=Never --image=redis:7-alpine \
+              --env="SRC=${SOURCE_REDIS_KEY}" --env="TGT=${TARGET_REDIS_KEY}" -- sh -c '
+              redis-cli -h ${{ parameters.sourceRedisHost }} -p ${{ parameters.sourceRedisPort }} --tls -a "$SRC" --scan | while read k; do
+                T=$(redis-cli -h ${{ parameters.sourceRedisHost }} -p ${{ parameters.sourceRedisPort }} --tls -a "$SRC" PTTL "$k")
+                [ "$T" = "-1" ] && T=0
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p ${{ parameters.sourceRedisPort }} --tls -a "$SRC" --raw DUMP "$k" | \
+                redis-cli -h ${{ parameters.targetRedisHost }} -p ${{ parameters.targetRedisPort }} --tls -a "$TGT" -x RESTORE "$k" "$T" REPLACE
+              done
+              S=$(redis-cli -h ${{ parameters.sourceRedisHost }} -p ${{ parameters.sourceRedisPort }} --tls -a "$SRC" DBSIZE)
+              T=$(redis-cli -h ${{ parameters.targetRedisHost }} -p ${{ parameters.targetRedisPort }} --tls -a "$TGT" DBSIZE)
+              echo "Source:$S Target:$T"
+              [ "$S" = "$T" ]
+            '
+        env:
+          SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
+          TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
