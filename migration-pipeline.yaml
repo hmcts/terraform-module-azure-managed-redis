@@ -119,18 +119,16 @@ stages:
               --namespace=redis-migration \
               -- sh -c '
                 redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "${SOURCE_REDIS_KEY}" \
-                  --scan --pattern "*" | while read key; do
-                    echo "Migrating: $key"
+                  --scan | while read key; do
                     redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "${SOURCE_REDIS_KEY}" \
                       DUMP "$key" | redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 \
                       --tls --user default -a "${TARGET_REDIS_KEY}" \
                       -x RESTORE "$key" 0 REPLACE
-                  done '
-
+                    echo "Migrated: $key"
+                  done
+              '
             kubectl wait --for=condition=complete --timeout=1800s job/$JOB_NAME -n redis-migration
             kubectl logs -l job-name=$JOB_NAME -n redis-migration
-            
-            echo "Cleaning up namespace..."
             kubectl delete namespace redis-migration --ignore-not-found=true
         env:
           SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
