@@ -110,13 +110,11 @@ stages:
                           \$SRC PING 2>/dev/null || exit 1
                           \$TGT PING 2>/dev/null || exit 1
                           
-                          \$SRC --scan 2>/dev/null | while read key; do
+                          \$SRC KEYS "*" 2>/dev/null | while read key; do
                             echo "Processing: \$key"
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
-                            echo "TTL: \$ttl, Value length: \${#val}"
-                            result=\$(\$TGT SET "\$key" "\$val" 2>/dev/null)
-                            echo "SET result: \$result"
+                            \$TGT SET "\$key" "\$val" 2>/dev/null
                             [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" 2>/dev/null
                             echo "✓ \$key"
                           done
