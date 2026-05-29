@@ -157,6 +157,12 @@ stages:
                           
                           echo ""
                           echo "Summary: \$verified/\$count keys verified in target"
+                          
+                          echo ""
+                          echo "All keys in target (across all cluster shards):"
+                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
+                            echo "  - \$key"
+                          done
                 EOF
 
                 kubectl wait --for=condition=complete --timeout=3600s job -l batch.kubernetes.io/job-name -n redis-migration
