@@ -131,4 +131,3 @@ stages:
             env:
               SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
               TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
-``
