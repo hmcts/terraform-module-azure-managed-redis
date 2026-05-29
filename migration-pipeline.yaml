@@ -144,14 +144,19 @@ stages:
                           echo "Migration complete! Migrated \$count keys"
                           echo ""
                           echo "Verifying all keys in target:"
+                          verified=0
                           for key in \$(\$SRC KEYS "*" 2>/dev/null); do
                             val=\$(\$TGT GET "\$key" 2>/dev/null)
                             if [ -n "\$val" ]; then
                               echo "  ✓ \$key exists"
+                              verified=\$((verified + 1))
                             else
                               echo "  ✗ \$key MISSING"
                             fi
                           done
+                          
+                          echo ""
+                          echo "Summary: \$verified/\$count keys verified in target"
                 EOF
 
                 kubectl wait --for=condition=complete --timeout=3600s job -l batch.kubernetes.io/job-name -n redis-migration
