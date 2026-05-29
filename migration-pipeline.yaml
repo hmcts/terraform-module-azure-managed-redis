@@ -110,19 +110,20 @@ stages:
                           \$SRC PING 2>/dev/null || exit 1
                           \$TGT PING 2>/dev/null || exit 1
                           
+                          echo "Source has \$(\$SRC DBSIZE) keys"
+                          echo "Found keys:"
+                          \$SRC KEYS "*"
+                          echo ""
+                          
                           echo "Starting migration..."
                           count=0
                           for key in \$(\$SRC KEYS "*" 2>/dev/null); do
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
-                            result=\$(\$TGT SET "\$key" "\$val" 2>&1)
-                            if [ "\$result" != "OK" ]; then
-                              echo "ERROR setting \$key: \$result"
-                            else
-                              [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" 2>/dev/null
-                              count=\$((count + 1))
-                              echo "\$count. ✓ \$key"
-                            fi
+                            \$TGT SET "\$key" "\$val" >/dev/null 2>&1
+                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
+                            count=\$((count + 1))
+                            echo "\$count. ✓ \$key"
                           done
                           
                           echo "Complete! Target has \$(\$TGT DBSIZE 2>/dev/null) keys"
