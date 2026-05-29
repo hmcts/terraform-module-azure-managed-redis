@@ -119,12 +119,22 @@ stages:
                           echo "Starting migration..."
                           count=0
                           for key in \$all_keys; do
+                            echo "Migrating: \$key"
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
-                            \$TGT SET "\$key" "\$val" >/dev/null 2>&1
-                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
-                            count=\$((count + 1))
-                            echo "\$count. ✓ \$key"
+                            echo "  Value: \$val"
+                            set_result=\$(\$TGT SET "\$key" "\$val" 2>&1)
+                            echo "  SET result: \$set_result"
+                            
+                            if echo "\$set_result" | grep -qi "ok"; then
+                              [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
+                              count=\$((count + 1))
+                              verify=\$(\$TGT EXISTS "\$key" 2>/dev/null)
+                              echo "  EXISTS check: \$verify"
+                              echo "  ✓ Success"
+                            else
+                              echo "  ✗ FAILED"
+                            fi
                           done
                           
                           echo "Complete! Target has \$(\$TGT DBSIZE 2>/dev/null) keys"
