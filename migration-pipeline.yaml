@@ -110,6 +110,9 @@ stages:
                           \$SRC PING 2>/dev/null || exit 1
                           \$TGT PING 2>/dev/null || exit 1
                           
+                          echo "Flushing target Redis..."
+                          \$TGT FLUSHALL
+                          
                           echo "Starting migration..."
                           count=0
                           for key in \$(\$SRC KEYS "*" 2>/dev/null); do
