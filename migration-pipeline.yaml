@@ -111,13 +111,14 @@ stages:
                           \$TGT PING 2>/dev/null || exit 1
                           
                           echo "Source has \$(\$SRC DBSIZE) keys"
+                          all_keys=\$(\$SRC KEYS "*")
                           echo "Found keys:"
-                          \$SRC KEYS "*"
+                          echo "\$all_keys"
                           echo ""
                           
                           echo "Starting migration..."
                           count=0
-                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
+                          for key in \$all_keys; do
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
                             \$TGT SET "\$key" "\$val" >/dev/null 2>&1
