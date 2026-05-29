@@ -110,8 +110,18 @@ stages:
                           \$SRC PING 2>/dev/null || exit 1
                           \$TGT PING 2>/dev/null || exit 1
                           
+                          echo "Ensuring all source keys have no expiry..."
+                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
+                            \$SRC PERSIST "\$key" >/dev/null 2>&1
+                          done
+                          
                           echo "Flushing target Redis..."
                           \$TGT FLUSHALL
+                          
+                          echo ""
+                          echo "Source keys before migration:"
+                          \$SRC KEYS "*"
+                          echo ""
                           
                           echo "Starting migration..."
                           count=0
@@ -119,9 +129,15 @@ stages:
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
                             \$TGT SET "\$key" "\$val" >/dev/null 2>&1
-                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
-                            count=\$((count + 1))
-                            echo "\$count. ✓ \$key"
+                            
+                            if [ "\$ttl" -gt 0 ]; then
+                              \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
+                              count=\$((count + 1))
+                              echo "\$count. ✓ \$key (TTL: \$ttl ms)"
+                            else
+                              count=\$((count + 1))
+                              echo "\$count. ✓ \$key (no expiry)"
+                            fi
                           done
                           
                           echo ""
