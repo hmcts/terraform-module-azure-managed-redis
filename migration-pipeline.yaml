@@ -115,10 +115,14 @@ stages:
                           for key in \$(\$SRC KEYS "*" 2>/dev/null); do
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
-                            \$TGT SET "\$key" "\$val" 2>/dev/null
-                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" 2>/dev/null
-                            count=\$((count + 1))
-                            echo "\$count. ✓ \$key"
+                            result=\$(\$TGT SET "\$key" "\$val" 2>&1)
+                            if [ "\$result" != "OK" ]; then
+                              echo "ERROR setting \$key: \$result"
+                            else
+                              [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" 2>/dev/null
+                              count=\$((count + 1))
+                              echo "\$count. ✓ \$key"
+                            fi
                           done
                           
                           echo "Complete! Target has \$(\$TGT DBSIZE 2>/dev/null) keys"
