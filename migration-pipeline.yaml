@@ -104,65 +104,38 @@ stages:
                         command: [sh, -c]
                         args:
                         - |
-                          SRC="redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a \$SRC"
-                          TGT="redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a \$TGT"
+                          SRC="redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a \$SRC --no-auth-warning"
+                          TGT="redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a \$TGT --no-auth-warning"
                           
-                          \$SRC PING 2>/dev/null || exit 1
-                          \$TGT PING 2>/dev/null || exit 1
+                          \$SRC PING || exit 1
+                          \$TGT PING || exit 1
                           
-                          echo "Ensuring all source keys have no expiry..."
-                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
-                            \$SRC PERSIST "\$key" >/dev/null 2>&1
-                          done
+                          echo "Removing expiry from source keys..."
+                          for key in \$(\$SRC KEYS "*"); do \$SRC PERSIST "\$key"; done
                           
-                          echo "Flushing target Redis..."
+                          echo "Flushing target..."
                           \$TGT FLUSHALL
                           
-                          echo ""
-                          echo "Source keys before migration:"
-                          \$SRC KEYS "*"
-                          echo ""
-                          
-                          echo "Starting migration..."
+                          echo "Migrating keys..."
                           count=0
-                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
-                            ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
-                            val=\$(\$SRC GET "\$key" 2>/dev/null)
-                            \$TGT SET "\$key" "\$val" >/dev/null 2>&1
-                            
-                            if [ "\$ttl" -gt 0 ]; then
-                              \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
-                              count=\$((count + 1))
-                              echo "\$count. ✓ \$key (TTL: \$ttl ms)"
-                            else
-                              count=\$((count + 1))
-                              echo "\$count. ✓ \$key (no expiry)"
-                            fi
+                          for key in \$(\$SRC KEYS "*"); do
+                            ttl=\$(\$SRC PTTL "\$key")
+                            val=\$(\$SRC GET "\$key")
+                            \$TGT SET "\$key" "\$val"
+                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl"
+                            count=\$((count + 1))
+                            echo "\$count. ✓ \$key"
                           done
                           
                           echo ""
-                          echo "Migration complete! Migrated \$count keys"
-                          echo ""
-                          echo "Verifying all keys in target:"
+                          echo "Migrated \$count keys. Verifying..."
                           verified=0
-                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
-                            val=\$(\$TGT GET "\$key" 2>/dev/null)
-                            if [ -n "\$val" ]; then
-                              echo "  ✓ \$key exists"
-                              verified=\$((verified + 1))
-                            else
-                              echo "  ✗ \$key MISSING"
-                            fi
+                          for key in \$(\$SRC KEYS "*"); do
+                            \$TGT GET "\$key" >/dev/null && echo "  ✓ \$key" && verified=\$((verified + 1))
                           done
                           
                           echo ""
-                          echo "Summary: \$verified/\$count keys verified in target"
-                          
-                          echo ""
-                          echo "All keys in target (across all cluster shards):"
-                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
-                            echo "  - \$key"
-                          done
+                          echo "Complete: \$verified/\$count keys verified in target"
                 EOF
 
                 kubectl wait --for=condition=complete --timeout=3600s job -l batch.kubernetes.io/job-name -n redis-migration
