@@ -1,4 +1,5 @@
 name: Terraform Azure Redis Migration
+
 trigger:
   batch: true
   branches:
@@ -20,24 +21,31 @@ parameters:
   - name: aksClusterName
     type: string
     default: "cft-sbox-00-aks"
+
   - name: sourceRedisHost
     type: string
     default: ""
+
   - name: targetRedisHost
     type: string
     default: ""
 
 variables:
   - template: vars/input-variables.yaml@cnp-azuredevops-libraries
+
   - name: timeoutInMinutes
-    value: 60
+    value: 90
+
   - name: agentImage
     value: ubuntu-24.04
+
   - name: serviceConnection
     value: "DCD-CFTAPPS-SBOX"
+
   - name: aksResourceGroup
     value: "cft-sbox-00-rg"
-  - group: redis-migration-secrets 
+
+  - group: redis-migration-secrets
 
 stages:
   - stage: Precheck
@@ -55,75 +63,72 @@ stages:
               forcePreventParallelJobRun: true
 
   - stage: migrate_data
-    displayName: 'Azure_Redis_Migration'
+    displayName: 'Redis Data Migration'
     dependsOn: Precheck
     jobs:
-    - job: redis_migration
-      displayName: 'Redis Migration'
-      pool:
-        vmImage: ${{ variables.agentImage }}
-      timeoutInMinutes: ${{ variables.timeoutInMinutes }}
-      steps:
-      - task: AzureCLI@2
-        displayName: Migrate Redis Data
-        inputs:
-          azureSubscription: $(serviceConnection)
-          scriptType: bash
-          scriptLocation: inlineScript
-          inlineScript: |
-            az aks get-credentials --resource-group $(aksResourceGroup) --name ${{ parameters.aksClusterName }} --admin --overwrite-existing
-            kubectl create namespace redis-migration 2>/dev/null || true
-            
-            JOB_NAME="redis-migrate-$(date +%s)"
-            cat <<EOF | kubectl apply -f -
-            apiVersion: batch/v1
-            kind: Job
-            metadata:
-              name: $JOB_NAME
-              namespace: redis-migration
-            spec:
-              ttlSecondsAfterFinished: 600
-              template:
+      - job: redis_migration
+        displayName: 'Migrate Redis Keys'
+        pool:
+          vmImage: ${{ variables.agentImage }}
+        timeoutInMinutes: ${{ variables.timeoutInMinutes }}
+        steps:
+          - task: AzureCLI@2
+            displayName: Run Migration
+            inputs:
+              azureSubscription: $(serviceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials --resource-group $(aksResourceGroup) --name ${{ parameters.aksClusterName }} --admin --overwrite-existing
+                kubectl create namespace redis-migration 2>/dev/null || true
+
+                echo "Testing connections..."
+                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING || exit 1
+                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "$TARGET_REDIS_KEY" PING || exit 1
+
+                cat <<EOF | kubectl apply -f -
+                apiVersion: batch/v1
+                kind: Job
+                metadata:
+                  name: redis-migrate-$(date +%s)
+                  namespace: redis-migration
                 spec:
-                  restartPolicy: Never
-                  containers:
-                  - name: redis-migration
-                    image: redis:7-alpine
-                    env:
-                    - name: SRC
-                      value: "$SOURCE_REDIS_KEY"
-                    - name: TGT
-                      value: "$TARGET_REDIS_KEY"
-                    command: [sh, -c]
-                    args:
-                    - |
-                      echo "Testing connections..."
-                      redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" PING || exit 1
-                      redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" PING || exit 1
-                      
-                      echo "Migrating keys..."
-                      redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" --scan | while read key; do
-                        # Get TTL and value from source
-                        ttl=\$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" PTTL "\$key")
-                        value=\$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" GET "\$key")
-                        
-                        # Set key in target
-                        redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" SET "\$key" "\$value"
-                        
-                        # Set TTL if key has expiration
-                        [ "\$ttl" -gt "0" ] && redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" PEXPIRE "\$key" "\$ttl"
-                        
-                        echo "✓ \$key"
-                      done
-                      
-                      echo ""
-                      echo "Migration complete!"
-                      echo "Source keys: \$(redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "\$SRC" DBSIZE)"
-                      echo "Target keys: \$(redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "\$TGT" DBSIZE)"
-            EOF
-            
-            kubectl wait --for=condition=complete --timeout=1800s job/$JOB_NAME -n redis-migration
-            kubectl logs -l job-name=$JOB_NAME -n redis-migration
-        env:
-          SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
-          TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
+                  ttlSecondsAfterFinished: 600
+                  template:
+                    spec:
+                      restartPolicy: Never
+                      containers:
+                      - name: migrate
+                        image: redis:7-alpine
+                        env:
+                        - name: SRC
+                          value: "$SOURCE_REDIS_KEY"
+                        - name: TGT
+                          value: "$TARGET_REDIS_KEY"
+                        command: [sh, -c]
+                        args:
+                        - |
+                          SRC="redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a \$SRC"
+                          TGT="redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a \$TGT"
+                          
+                          \$SRC PING || exit 1
+                          \$TGT PING || exit 1
+                          
+                          \$SRC --scan | while read key; do
+                            ttl=\$(\$SRC PTTL "\$key")
+                            val=\$(\$SRC GET "\$key")
+                            \$TGT SET "\$key" "\$val"
+                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl"
+                            echo "✓ \$key"
+                          done
+                          
+                          echo "Migrated: \$(\$TGT DBSIZE) keys"
+                EOF
+
+                kubectl wait --for=condition=complete --timeout=3600s job -l batch.kubernetes.io/job-name -n redis-migration
+                kubectl logs -l batch.kubernetes.io/job-name -n redis-migration
+                kubectl delete namespace redis-migration
+            env:
+              SOURCE_REDIS_KEY: $(SOURCE_REDIS_KEY)
+              TARGET_REDIS_KEY: $(TARGET_REDIS_KEY)
+``
