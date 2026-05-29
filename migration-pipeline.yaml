@@ -82,10 +82,6 @@ stages:
                 az aks get-credentials --resource-group $(aksResourceGroup) --name ${{ parameters.aksClusterName }} --admin --overwrite-existing
                 kubectl create namespace redis-migration 2>/dev/null || true
 
-                echo "Testing connections..."
-                redis-cli -h ${{ parameters.sourceRedisHost }} -p 6380 --tls -a "$SOURCE_REDIS_KEY" PING || exit 1
-                redis-cli -h ${{ parameters.targetRedisHost }} -p 10000 --tls -c -a "$TARGET_REDIS_KEY" PING || exit 1
-
                 cat <<EOF | kubectl apply -f -
                 apiVersion: batch/v1
                 kind: Job
