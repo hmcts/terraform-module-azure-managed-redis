@@ -188,6 +188,40 @@ variable "customer_managed_key" {
   default = null
 }
 
+# ─── Redis Access and data controls  ──────────
+
+variable "redis_access_policy_assignments" {
+  description = <<-EOT
+    Map of access policy name to a map of principals to assign.
+    The inner key is a label used as the Terraform state key.
+    Currently only 'Data Owner' is supported by Managed Redis.
+
+    Each inner entry:
+      - omit both fields to have the module create a new managed identity auto-named as '<redis-name>-<policy>-<label>-mi'
+      - set display_name to override the auto-assembled identity name
+      - set object_id to assign permissions to a pre-existing principal
+
+    Example:
+      redis_access_policy_assignments = {
+        "Data Owner" = {
+          api-service  = {}                                                          # new MI, named: myapp-cache-sandbox-api-service-mi
+          jobs-worker  = { display_name = "my-custom-mi" }                          # new MI, custom name
+          preexisting  = { object_id = "00000000-0000-0000-0000-000000000000" }     # pre-existing, no MI created
+        }
+      }
+  EOT
+  type = map(map(object({
+    object_id    = optional(string)
+    display_name = optional(string)
+  })))
+  default = {}
+
+  validation {
+    condition     = alltrue([for policy in keys(var.redis_access_policy_assignments) : policy == "Data Owner"])
+    error_message = "Currently only 'Data Owner' is supported by azurerm_managed_redis_access_policy_assignment. Additional policies will be enabled when Azure supports them."
+  }
+}
+
 # ─── HashiCorp Vault ──────────────────────────────────────────────────────────
 
 variable "enable_vault_secret" {

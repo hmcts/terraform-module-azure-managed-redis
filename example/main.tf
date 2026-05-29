@@ -33,6 +33,9 @@ module "managed_redis" {
   clustering_policy                  = "EnterpriseCluster"
   eviction_policy                    = "NoEviction"
 
+  # access / data policies
+  redis_access_policy_assignments = var.redis_access_policy_assignments
+
   # Uncomment for RDB persistence (cannot be combined with geo-replication)
   persistence_rdb_backup_frequency = "6h"
 
