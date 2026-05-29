@@ -110,42 +110,19 @@ stages:
                           \$SRC PING 2>/dev/null || exit 1
                           \$TGT PING 2>/dev/null || exit 1
                           
-                          echo "Target memory info:"
-                          \$TGT INFO memory | grep -E "used_memory|maxmemory|maxmemory_policy"
-                          echo ""
-                          
-                          echo "Source has \$(\$SRC DBSIZE) keys"
-                          all_keys=\$(\$SRC KEYS "*")
-                          echo "Found keys:"
-                          echo "\$all_keys"
-                          echo ""
-                          
                           echo "Starting migration..."
                           count=0
-                          for key in \$all_keys; do
-                            echo "Migrating: \$key"
+                          for key in \$(\$SRC KEYS "*" 2>/dev/null); do
                             ttl=\$(\$SRC PTTL "\$key" 2>/dev/null)
                             val=\$(\$SRC GET "\$key" 2>/dev/null)
-                            echo "  TTL: \$ttl, Value: \$val"
-                            
-                            set_result=\$(\$TGT SET "\$key" "\$val" 2>&1)
-                            
-                            if echo "\$set_result" | grep -qi "ok"; then
-                              if [ "\$ttl" -gt 0 ]; then
-                                echo "  Setting PEXPIRE to \$ttl"
-                                \$TGT PEXPIRE "\$key" "\$ttl" 2>&1
-                              fi
-                              count=\$((count + 1))
-                              echo "  ✓ Success"
-                              sleep 1
-                              verify=\$(\$TGT GET "\$key" 2>/dev/null)
-                              echo "  Verification GET after 1s: \$verify"
-                            else
-                              echo "  ✗ FAILED: \$set_result"
-                            fi
+                            \$TGT SET "\$key" "\$val" >/dev/null 2>&1
+                            [ "\$ttl" -gt 0 ] && \$TGT PEXPIRE "\$key" "\$ttl" >/dev/null 2>&1
+                            count=\$((count + 1))
+                            echo "\$count. ✓ \$key"
                           done
                           
-                          echo "Complete! Migrated \$count keys"
+                          echo ""
+                          echo "Migration complete! Migrated \$count keys"
                           echo "Target keys:"
                           \$TGT KEYS "*"
                 EOF
