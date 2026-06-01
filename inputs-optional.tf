@@ -190,15 +190,14 @@ variable "redis_access_policy_assignments" {
     Currently only 'Data Owner' is supported by Managed Redis.
 
     Each inner entry:
-      - omit both fields to have the module create a new managed identity auto-named as '<redis-name>-<policy>-<label>-mi'
+      - omit both fields to have the module create a new managed identity auto-named as '<redis-name>-<policy-slug>-<label>-mi'
       - set display_name to override the auto-assembled identity name
       - set object_id to assign permissions to a pre-existing principal
 
     Example:
       redis_access_policy_assignments = {
         "Data Owner" = {
-          api-service  = {}                                                          # new MI, named: myapp-cache-sandbox-api-service-mi
-          jobs-worker  = { display_name = "my-custom-mi" }                          # new MI, custom name
+          api-service  = {}                                                          # new MI, named: myapp-cache-sandbox-data-owner-api-service-mi
           preexisting  = { object_id = "00000000-0000-0000-0000-000000000000" }     # pre-existing, no MI created
         }
       }
