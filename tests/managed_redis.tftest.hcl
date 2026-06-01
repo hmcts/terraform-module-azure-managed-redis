@@ -113,28 +113,3 @@ run "managed_redis_resource_group" {
     error_message = "Resource group location should be UK South"
   }
 }
-
-##todo
-# #good way to close off access keys
-# # when we specify  false, all access keys disabled
-# #ai below, check
-# run "entra_id_auth_explicit" {
-#   command = plan
-
-#   variables {
-#     common_tags                        = run.setup.common_tags
-#     sku_name                           = "Balanced_B0"
-#     access_keys_authentication_enabled = false
-#   }
-
-#   assert {
-#     condition     = azurerm_managed_redis.redis.default_database[0].access_keys_authentication_enabled == false
-#     error_message = "Access keys should be disabled when Entra ID auth is requested"
-#   }
-
-#   # Verify access key outputs will be null/empty
-#   assert {
-#     condition     = azurerm_managed_redis.redis.default_database[0].primary_access_key == null
-#     error_message = "Primary access key should be null when access keys are disabled"
-#   }
-# }
