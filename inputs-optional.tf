@@ -96,13 +96,6 @@ variable "geo_replication_group_name" {
   description = "Name of the geo-replication group. If set, links the database into an active geo-replication group. Cannot be combined with persistence settings. Changing this forces database recreation."
   type        = string
   default     = null
-
-  validation {
-    condition = var.geo_replication_group_name == null || (
-      var.persistence_aof_backup_frequency == null && var.persistence_rdb_backup_frequency == null
-    )
-    error_message = "geo_replication_group_name cannot be combined with persistence_aof_backup_frequency or persistence_rdb_backup_frequency."
-  }
 }
 
 variable "persistence_aof_backup_frequency" {

@@ -53,6 +53,10 @@ resource "azurerm_managed_redis" "redis" {
       condition     = !contains([for m in var.redis_modules : m.name], "RediSearch") || var.clustering_policy == "EnterpriseCluster"
       error_message = "When using the RediSearch module, clustering_policy must be set to 'EnterpriseCluster'."
     }
+    precondition {
+      condition     = var.geo_replication_group_name == null || (var.persistence_aof_backup_frequency == null && var.persistence_rdb_backup_frequency == null)
+      error_message = "geo_replication_group_name cannot be combined with persistence_aof_backup_frequency or persistence_rdb_backup_frequency."
+    }
   }
 }
 
