@@ -6,12 +6,13 @@ locals {
   flattened_access_policy_assignments = {
     for assignment in flatten([
       for policy, principals in var.redis_access_policy_assignments : [
-        for label, principal in principals : {
+        for label, principal_details in principals : {
+          policy_name  = policy
           key = "${replace(lower(policy), " ", "-")}/${label}"
           # display_name is auto-assembled from local.name + label + "-mi" unless explicitly overridden.
-          display_name = coalesce(principal.display_name, "${local.name}-${replace(lower(policy), " ", "-")}-${label}-mi")
-          object_id    = principal.object_id
-          create       = principal.object_id == null
+          display_name = coalesce(principal_details.display_name, "${local.name}-${replace(lower(policy), " ", "-")}-${label}-mi")
+          object_id    = principal_details.object_id
+          create       = principal_details.object_id == null
         }
       ]
     ]) : assignment.key => assignment
