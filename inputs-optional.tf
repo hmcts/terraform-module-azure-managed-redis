@@ -207,11 +207,11 @@ variable "redis_access_policy_assignments" {
     display_name = optional(string)
   })))
   default = {}
-
   validation {
     condition     = alltrue([for policy in keys(var.redis_access_policy_assignments) : policy == "Data Owner"])
     error_message = "Currently only 'Data Owner' is supported by azurerm_managed_redis_access_policy_assignment. Additional policies will be enabled when Azure supports them."
   }
+
 }
 
 # ─── HashiCorp Vault ──────────────────────────────────────────────────────────
