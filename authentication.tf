@@ -1,4 +1,5 @@
 # file consists of logic for managed identity creation and ACL assignment
+# haven't moved the mi default naming logic to locals file as it's more brief combined with the foreach
 
 locals {
   # Flatten policy assignments into a stable map keyed by "<policy-slug>/<label>".
