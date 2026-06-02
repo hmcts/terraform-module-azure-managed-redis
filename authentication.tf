@@ -7,7 +7,7 @@ locals {
     for assignment in flatten([
       for policy, principals in var.redis_access_policy_assignments : [
         for label, principal_details in principals : {
-          policy_name  = policy
+          policy_name  = policy # preserved for future use when Azure supports additional policy types
           key = "${replace(lower(policy), " ", "-")}/${label}"
           # display_name is auto-assembled from local.name + label + "-mi" unless explicitly overridden.
           display_name = coalesce(principal_details.display_name, "${local.name}-${replace(lower(policy), " ", "-")}-${label}-mi")

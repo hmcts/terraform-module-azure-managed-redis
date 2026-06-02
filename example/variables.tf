@@ -12,7 +12,7 @@ variable "product" {
 }
 
 variable "redis_access_policy_assignments" {
-  description = "Map of access policy name to a map of principals to assign."
+  description = "Map of access policy, a label for each mi and the entities themselves to assign to the Redis ACL."
   type = map(map(object({
     object_id    = optional(string)
     display_name = optional(string)

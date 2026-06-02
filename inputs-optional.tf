@@ -186,19 +186,25 @@ variable "customer_managed_key" {
 variable "redis_access_policy_assignments" {
   description = <<-EOT
     Map of access policy name to a map of principals to assign.
-    The inner key is a label used as the Terraform state key.
-    Currently only 'Data Owner' is supported by Managed Redis.
+
+    Outer Key:
+      - Currently only 'Data Owner' is supported by Managed Redis.
+
+    The inner key (managed identity label):
+      - Should be a meaningful label to describe the managed identity. 
+      - Functions as a unique identifer within terraform so don't give two the same label
 
     Each inner entry:
       - omit both fields to have the module create a new managed identity auto-named as '<redis-name>-<policy-slug>-<label>-mi'
-      - set display_name to override the auto-assembled identity name
+      - set display_name to override the auto-assembled identity name, e.g. for CPP naming scheme
       - set object_id to assign permissions to a pre-existing principal
 
     Example:
       redis_access_policy_assignments = {
         "Data Owner" = {
-          api-service  = {}                                                          # new MI, named: myapp-cache-sandbox-data-owner-api-service-mi
-          preexisting  = { object_id = "00000000-0000-0000-0000-000000000000" }     # pre-existing, no MI created
+          api-service       = {}                                                          # new MI, named: myapp-cache-sandbox-data-owner-api-service-mi
+          crime_connection  = { display_name = "mi-prd-ccm01-customname" }                # new MI, named: mi-prd-ccm01-customname
+          preexisting_user  = { object_id = "00000000-0000-0000-0000-000000000000" }      # pre-existing user assigned, no MI created
         }
       }
   EOT
