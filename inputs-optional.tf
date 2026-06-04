@@ -96,13 +96,6 @@ variable "geo_replication_group_name" {
   description = "Name of the geo-replication group. If set, links the database into an active geo-replication group. Cannot be combined with persistence settings. Changing this forces database recreation."
   type        = string
   default     = null
-
-  validation {
-    condition = var.geo_replication_group_name == null || (
-      var.persistence_aof_backup_frequency == null && var.persistence_rdb_backup_frequency == null
-    )
-    error_message = "geo_replication_group_name cannot be combined with persistence_aof_backup_frequency or persistence_rdb_backup_frequency."
-  }
 }
 
 variable "persistence_aof_backup_frequency" {
@@ -186,6 +179,45 @@ variable "customer_managed_key" {
     user_assigned_identity_id = string
   })
   default = null
+}
+
+# ─── Redis Access and data controls  ──────────
+
+variable "redis_access_policy_assignments" {
+  description = <<-EOT
+    Map of access policy name to a map of principals to assign.
+
+    Outer Key:
+      - Currently only 'Data Owner' is supported by Managed Redis.
+
+    The inner key (managed identity label):
+      - Should be a meaningful label to describe the managed identity. 
+      - Functions as a unique identifer within terraform so don't give two the same label
+
+    Each inner entry:
+      - omit both fields to have the module create a new managed identity auto-named as '<redis-name>-<policy-slug>-<label>-mi'
+      - set display_name to override the auto-assembled identity name, e.g. for CPP naming scheme
+      - set object_id to assign permissions to a pre-existing principal
+
+    Example:
+      redis_access_policy_assignments = {
+        "Data Owner" = {
+          api-service       = {}                                                          # new MI, named: myapp-cache-sandbox-data-owner-api-service-mi
+          crime_connection  = { display_name = "mi-prd-ccm01-customname" }                # new MI, named: mi-prd-ccm01-customname
+          preexisting_user  = { object_id = "00000000-0000-0000-0000-000000000000" }      # pre-existing user assigned, no MI created
+        }
+      }
+  EOT
+  type = map(map(object({
+    object_id    = optional(string)
+    display_name = optional(string)
+  })))
+  default = {}
+  validation {
+    condition     = alltrue([for policy in keys(var.redis_access_policy_assignments) : policy == "Data Owner"])
+    error_message = "Currently only 'Data Owner' is supported by azurerm_managed_redis_access_policy_assignment. Additional policies will be enabled when Azure supports them."
+  }
+
 }
 
 # ─── HashiCorp Vault ──────────────────────────────────────────────────────────

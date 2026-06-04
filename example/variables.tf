@@ -10,3 +10,12 @@ variable "builtFrom" {
 variable "product" {
   description = "The source or origin of the product"
 }
+
+variable "redis_access_policy_assignments" {
+  description = "Map of access policy, a label for each mi and the entities themselves to assign to the Redis ACL."
+  type = map(map(object({
+    object_id    = optional(string)
+    display_name = optional(string)
+  })))
+  default = {}
+}
