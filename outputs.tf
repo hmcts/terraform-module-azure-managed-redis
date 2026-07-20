@@ -25,18 +25,18 @@ output "default_database_id" {
 
 output "port" {
   description = "The TCP port of the database endpoint."
-  value       = azurerm_managed_redis.redis.default_database[0].port
+  value       = try(azurerm_managed_redis.redis.default_database[0].port, null)
 }
 
 output "primary_access_key" {
   description = "The primary access key for the Managed Redis database. Only populated when access_keys_authentication_enabled is true."
-  value       = azurerm_managed_redis.redis.default_database[0].primary_access_key
+  value       = try(azurerm_managed_redis.redis.default_database[0].primary_access_key, null)
   sensitive   = true
 }
 
 output "secondary_access_key" {
   description = "The secondary access key for the Managed Redis database. Only populated when access_keys_authentication_enabled is true."
-  value       = azurerm_managed_redis.redis.default_database[0].secondary_access_key
+  value       = try(azurerm_managed_redis.redis.default_database[0].secondary_access_key, null)
   sensitive   = true
 }
 
@@ -69,12 +69,12 @@ output "redis_cache_hostname" {
 
 output "redis_cache_ssl_port" {
   description = "Alias for port — Managed Redis uses a single TLS port. Backward compatible with cpp-module-terraform-azurerm-redis."
-  value       = azurerm_managed_redis.redis.default_database[0].port
+  value = try(azurerm_managed_redis.redis.default_database[0].port, null)
 }
 
 output "redis_cache_primary_access_key" {
   description = "Alias for primary_access_key — backward compatible with cpp-module-terraform-azurerm-redis."
-  value       = azurerm_managed_redis.redis.default_database[0].primary_access_key
+  value     = try(azurerm_managed_redis.redis.default_database[0].primary_access_key, null)
   sensitive   = true
 }
 
@@ -85,13 +85,29 @@ output "redis_cache_secondary_access_key" {
 }
 
 output "redis_cache_primary_connection_string" {
-  description = "Constructed primary connection string in the format <hostname>:<port>,password=<key>,ssl=True. Only populated when access_keys_authentication_enabled is true."
-  value       = var.access_keys_authentication_enabled ? "${azurerm_managed_redis.redis.hostname}:${azurerm_managed_redis.redis.default_database[0].port},password=${azurerm_managed_redis.redis.default_database[0].primary_access_key},ssl=True,abortConnect=False" : null
+  description = "Primary connection string."
   sensitive   = true
+  value = var.access_keys_authentication_enabled ? try(
+    format(
+      "%s:%d,password=%s,ssl=True,abortConnect=False",
+      azurerm_managed_redis.redis.hostname,
+      azurerm_managed_redis.redis.default_database[0].port,
+      azurerm_managed_redis.redis.default_database[0].primary_access_key
+    ),
+    null
+  ) : null
 }
 
 output "redis_cache_secondary_connection_string" {
   description = "Constructed secondary connection string in the format <hostname>:<port>,password=<key>,ssl=True. Only populated when access_keys_authentication_enabled is true."
-  value       = var.access_keys_authentication_enabled ? "${azurerm_managed_redis.redis.hostname}:${azurerm_managed_redis.redis.default_database[0].port},password=${azurerm_managed_redis.redis.default_database[0].secondary_access_key},ssl=True,abortConnect=False" : null
   sensitive   = true
+  value = var.access_keys_authentication_enabled ? try(
+    format(
+      "%s:%d,password=%s,ssl=True,abortConnect=False",
+      azurerm_managed_redis.redis.hostname,
+      azurerm_managed_redis.redis.default_database[0].port,
+      azurerm_managed_redis.redis.default_database[0].secondary_access_key
+    ),
+    null
+  ) : null
 }
