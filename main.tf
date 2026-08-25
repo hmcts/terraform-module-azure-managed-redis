@@ -77,10 +77,10 @@ resource "azurerm_monitor_diagnostic_setting" "redis_diag" {
     }
   }
 
-  dynamic "metric" {
+  dynamic "enabled_metric" {
     for_each = var.diagnostic_metric_categories != null ? var.diagnostic_metric_categories : ["AllMetrics"]
     content {
-      category = metric.value
+      category = enabled_metric.value
     }
   }
 }
