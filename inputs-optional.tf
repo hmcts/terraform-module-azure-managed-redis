@@ -115,7 +115,7 @@ variable "persistence_rdb_backup_frequency" {
   default     = null
 
   validation {
-    condition     = var.persistence_rdb_backup_frequency == null || contains(["1h", "6h", "12h"], var.persistence_rdb_backup_frequency)
+    condition     = var.persistence_rdb_backup_frequency == null ? true : contains(["1h", "6h", "12h"], var.persistence_rdb_backup_frequency)
     error_message = "persistence_rdb_backup_frequency must be '1h', '6h', or '12h'."
   }
 }
